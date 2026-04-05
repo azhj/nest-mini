@@ -1,0 +1,110 @@
+/**
+ * ============================================================
+ * Prisma Schema - 数据库模型定义文件
+ * ============================================================
+ *
+ * 什么是 Prisma Schema？
+ * Prisma Schema 是 Prisma 的核心配置文件，用 Prisma DSL（领域特定语言）
+ * 定义数据库表结构、数据关系、连接信息等。
+ *
+ * 什么是 .prisma 文件？
+ * 一个 .prisma 文件包含：
+ *   1. Data Source（数据源）：连接哪个数据库
+ *   2. Generator（生成器）：生成什么语言的客户端代码
+ *   3. Model（模型）：定义数据库表结构
+ *
+ * 常用命令：
+ *   npx prisma generate    → 根据 schema 生成 PrismaClient 类型代码
+ *   npx prisma migrate dev → 创建数据库迁移（变更数据库结构）
+ *   npx prisma studio      → 打开可视化数据库管理界面
+ *   npx prisma db push     → 直接同步 schema 到数据库（开发用）
+ *   npx prisma db seed     → 运行种子数据
+ */
+
+// ============================================================
+// 1. 数据源（Data Source）
+//    定义连接哪个数据库，以及连接地址
+// ============================================================
+datasource db {
+  // provider: 指定使用什么数据库
+  // 可选值: postgresql, mysql, sqlite, sqlserver, mongodb, cockroachdb
+  provider = "mysql"
+
+  // url: 数据库连接地址
+  // 格式: mysql://用户名:密码@主机地址:端口/数据库名
+  // ⚠️ 注意：生产环境不要直接写明文密码，建议使用环境变量
+  url = env("DATABASE_URL")
+}
+
+// ============================================================
+// 2. 生成器（Generator）
+//    指定生成什么语言的 Prisma 客户端
+// ============================================================
+generator client {
+  // provider: 指定使用哪个生成器
+  // - prisma-client-js   → 生成 JavaScript/TypeScript 类型安全的数据库客户端
+  // - prisma-client-py   → 生成 Python 版本（需要 python 和 pip）
+  // - prisma-client-go   → 生成 Go 版本
+  //
+  // output: 生成代码的输出路径（默认 node_modules/@prisma/client）
+  //         NestJS 项目中通常不需要改，保持默认即可
+  provider = "prisma-client-js"
+}
+
+// ============================================================
+// 3. 模型（Model）
+//    定义数据表结构，每个 model 对应一张数据库表
+// ============================================================
+
+/**
+ * Cat 模型 - 猫咪表
+ *
+ * Prisma 模型命名规范：
+ * - 表名单数、首字母大写：Cat（不是 Cats）
+ * - Prisma 会自动转换为复数表名：Cat → cats
+ * - 字段用 camelCase：createdAt（不是 created_at）
+ */
+model Cat {
+  /** 主键：唯一标识每条记录 */
+  id        String   @id @default(cuid())   // cuid() 生成唯一 ID（类似 "clx9k5g2b0000qzqng5d5e9kf"）
+
+  /** 猫咪名字 */
+  name      String
+
+  /** 猫咪年龄 */
+  age       Int
+
+  /** 猫咪品种 */
+  breed     String
+
+  /** 创建时间：自动记录插入时间 */
+  createdAt DateTime @default(now())        // now() = 数据库当前时间
+
+  /** 更新时间：每次修改记录时自动更新 */
+  updatedAt DateTime @updatedAt
+
+  // ========================================
+  // Prisma 字段类型速查
+  // ========================================
+  // String    → VARCHAR / TEXT（字符串）
+  // Int       → INT（整数）
+  // BigInt    → BIGINT（大整数）
+  // Float     → DOUBLE（浮点数）
+  // Boolean   → BOOLEAN（布尔值）
+  // DateTime  → DATETIME（日期时间）
+  // Json      → JSON（JSON 对象）
+  // Bytes     → BLOB（二进制数据）
+  // Decimal   → DECIMAL（精确小数）
+  // Enum      → ENUM（枚举值）
+
+  // ========================================
+  // 字段修饰符速查
+  // ========================================
+  // @id          → 主键
+  // @default(x)  → 默认值
+  // @unique      → 唯一索引
+  // @index       → 普通索引
+  // @map("xxx")  → 映射到数据库的真实列名（如 @map("created_at") → 数据库列名是 created_at）
+  // @relation    → 关联关系（一对多、多对多等）
+  // @updatedAt   → 自动更新为当前时间
+}

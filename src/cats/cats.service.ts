@@ -1,87 +1,103 @@
 /**
  * ============================================================
- * 猫咪服务（Service）- 业务逻辑层
+ * 猫咪服务（Service）- 业务逻辑层 + Prisma 数据库操作
  * ============================================================
  *
- * 什么是 Service？
- * Service 负责处理所有的"业务逻辑"（Business Logic），
- * 它是 Controller 和数据之间的桥梁：
+ * 重大升级：本次修改将数据从"内存数组"迁移到"真实 MySQL 数据库"
  *
- *   Controller（接收请求）→ Service（处理逻辑）→ 数据库/外部服务
+ * 核心变化：
+ *   Before: private cats: Cat[] = []  ← 内存数组，服务器重启数据丢失
+ *   After:  PrismaService              ← MySQL 数据库，数据持久化
  *
- * 为什么需要 Service？
- * - 保持 Controller 简洁（只负责路由分发）
- * - 业务逻辑集中，便于维护和测试
- * - 实现关注点分离（Separation of Concerns）
+ * Prisma 在 Service 中的使用方式：
+ *   this.prisma.cat.create()   → 插入数据
+ *   this.prisma.cat.findMany() → 查询所有
+ *   this.prisma.cat.findUnique() → 查询单个
+ *   this.prisma.cat.update()   → 更新数据
+ *   this.prisma.cat.delete()   → 删除数据
  *
- * 依赖注入（DI）：
- * @Injectable() 装饰器告诉 NestJS：此类需要被 NestJS 容器管理，
- * 可以在其他类（如 Controller）的构造函数中自动注入实例。
+ * Prisma 的操作都是"链式"的，类似 jQuery 语法：
+ *   this.prisma.cat.findMany({ where: { age: { gt: 2 } } })
+ *
+ * 注意：所有 Prisma 操作都是异步的，必须用 await
  */
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { Cat } from './entities/cat.entity';
+import { PrismaService } from '../prisma/prisma.service';
 import type { CreateCatDto } from './dto/create-cat.dto';
 import type { UpdateCatDto } from './dto/update-cat.dto';
+// Prisma 在运行时生成的类型（数据库表结构）
+// 注意：这是 Prisma 根据 schema.prisma 自动生成的类型，不是我们手写的
+import type { Cat } from '@prisma/client';
 
-@Injectable() // 👈 装饰器：声明此类由 NestJS IoC 容器管理，可被注入
+@Injectable()
 export class CatsService {
   /**
-   * 内存数组模拟"数据库表"
-   * 每次服务器重启数据会清空（真实项目会用数据库持久化）
+   * 注入 PrismaService
+   * 通过 PrismaService 可以访问所有 Prisma 操作方法
    */
-  private cats: Cat[] = [
-    // 初始化两条示例数据，让你启动后就有数据可看
-    {
-      id: '1',
-      name: 'Tom',
-      age: 3,
-      breed: 'orange',
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      name: 'Luna',
-      age: 2,
-      breed: 'black',
-      createdAt: new Date().toISOString(),
-    },
-  ];
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * 创建一只猫咪（C - Create）
-   * @param createCatDto 客户端传来的创建数据
-   * @returns 创建后的猫咪对象（含自动生成的 id）
+   *
+   * Prisma 操作：this.prisma.cat.create()
+   * - data: 要插入的数据
+   * - Prisma 自动生成 id / createdAt / updatedAt（由 schema.prisma 定义）
+   *
+   * @param createCatDto 客户端传来的创建数据（已通过 ValidationPipe 验证）
+   * @returns 创建后的猫咪对象
    */
-  create(createCatDto: CreateCatDto): Cat {
-    const cat: Cat = {
-      id: Date.now().toString(), // 简单生成 ID（生产环境建议用 uuid）
-      createdAt: new Date().toISOString(),
-      ...createCatDto, // 把 DTO 的字段展开合并进来
-    };
-    this.cats.push(cat);
-    return cat;
+  async create(createCatDto: CreateCatDto): Promise<Cat> {
+    return await this.prisma.cat.create({
+      // data 接收一个对象，字段名和 schema.prisma 中定义的完全一致
+      // Prisma 会自动验证字段类型，处理默认值
+      data: {
+        name: createCatDto.name,
+        age: createCatDto.age,
+        breed: createCatDto.breed,
+      },
+    });
   }
 
   /**
    * 获取所有猫咪（R - Read All）
+   *
+   * Prisma 操作：this.prisma.cat.findMany()
+   *
+   * 注意：
+   * - findMany() 即使没有数据也返回空数组 []，不会报错
+   * - 跟之前内存数组的 findAll() 行为一致，但数据来自数据库
+   *
    * @returns 猫咪数组
    */
-  findAll(): Cat[] {
-    return this.cats;
+  async findAll(): Promise<Cat[]> {
+    return await this.prisma.cat.findMany({
+      // 排序：按创建时间倒序，最新创建的在前
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   /**
    * 根据 ID 获取一只猫咪（R - Read One）
-   * @param id 猫咪 ID
+   *
+   * Prisma 操作：this.prisma.cat.findUnique()
+   *
+   * Prisma 查找单个记录有两种方式：
+   *   - findUnique()   → 用唯一字段查找（如 id、email）
+   *   - findFirst()    → 查找满足条件的第一条（用 where）
+   *
+   * 这里用 findUnique({ where: { id } })，等价于 findFirst({ where: { id } })
+   *
+   * @param id 猫咪 ID（Prisma cuid 格式）
    * @returns 猫咪对象
-   * @throws NotFoundException 如果找不到对应 ID 的猫咪
+   * @throws NotFoundException 如果找不到
    */
-  findOne(id: string): Cat {
-    // find() 返回找到的元素，找不到返回 undefined
-    const cat = this.cats.find((c) => c.id === id);
+  async findOne(id: string): Promise<Cat> {
+    const cat = await this.prisma.cat.findUnique({
+      where: { id },
+    });
     if (!cat) {
-      // NestJS 标准做法：找不到就抛异常，框架统一处理返回 404
       throw new NotFoundException(`ID 为 ${id} 的猫咪不存在`);
     }
     return cat;
@@ -89,33 +105,46 @@ export class CatsService {
 
   /**
    * 更新猫咪信息（U - Update）
-   * 使用部分更新策略：只更新传入的字段，未传字段保持原值
+   *
+   * Prisma 操作：this.prisma.cat.update()
+   *
+   * update() 需要两个参数：
+   *   - where: 定位要更新的记录
+   *   - data: 要更新的字段（部分更新，未传字段保持原值）
+   *
    * @param id 猫咪 ID
-   * @param updateCatDto 要更新的字段
+   * @param updateCatDto 要更新的字段（都是可选的）
    * @returns 更新后的猫咪对象
-   * @throws NotFoundException 如果找不到对应 ID 的猫咪
+   * @throws NotFoundException 如果找不到对应 ID
    */
-  update(id: string, updateCatDto: UpdateCatDto): Cat {
-    const index = this.cats.findIndex((c) => c.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`ID 为 ${id} 的猫咪不存在`);
-    }
-    // 保留原对象，只覆盖 updateCatDto 中传入的字段
-    this.cats[index] = { ...this.cats[index], ...updateCatDto };
-    return this.cats[index];
+  async update(id: string, updateCatDto: UpdateCatDto): Promise<Cat> {
+    // 先检查是否存在，不存在则抛异常
+    await this.findOne(id);
+
+    return await this.prisma.cat.update({
+      where: { id },
+      data: {
+        // 只更新传入的字段：使用展开运算符，未传字段不更新
+        // 等价于：name: updateCatDto.name ?? 不更新
+        ...(updateCatDto.name && { name: updateCatDto.name }),
+        ...(updateCatDto.age !== undefined && { age: updateCatDto.age }),
+        ...(updateCatDto.breed && { breed: updateCatDto.breed }),
+      },
+    });
   }
 
   /**
    * 删除一只猫咪（D - Delete）
+   *
+   * Prisma 操作：this.prisma.cat.delete()
+   *
    * @param id 猫咪 ID
-   * @throws NotFoundException 如果找不到对应 ID 的猫咪
+   * @throws NotFoundException 如果找不到
    */
-  remove(id: string): void {
-    const index = this.cats.findIndex((c) => c.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`ID 为 ${id} 的猫咪不存在`);
-    }
-    // splice(index, 1) 从 index 位置删除 1 个元素
-    this.cats.splice(index, 1);
+  async remove(id: string): Promise<void> {
+    // 先检查是否存在
+    await this.findOne(id);
+    // 再删除（或者反过来也行，delete 找不到会抛异常 P2025）
+    await this.prisma.cat.delete({ where: { id } });
   }
 }
