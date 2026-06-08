@@ -52,7 +52,7 @@ async function bootstrap() {
   app.enableCors();
 
   // 获取端口，默认 3000
-  const port = process.env.PORT ?? 3000;
+  const port = process.env.PORT ?? 3008;
 
   // 启动服务器
   await app.listen(port);

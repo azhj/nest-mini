@@ -31,14 +31,7 @@
  * @ValidateNested() - 嵌套对象需要深度验证
  */
 
-import {
-  IsString,
-  IsInt,
-  Min,
-  Max,
-  MinLength,
-  IsIn,
-} from 'class-validator';
+import { IsString, IsInt, Min, Max, MinLength, IsIn } from 'class-validator';
 
 /** 创建猫咪时传入的参数类型（不需要传 id，由服务端生成） */
 export class CreateCatDto {
@@ -55,9 +48,8 @@ export class CreateCatDto {
 
   /** 猫咪品种：必须是指定品种之一 */
   @IsString()
-  @IsIn(
-    ['orange', 'black', 'white', 'brown', 'gray', 'tabby', 'siamese'],
-    { message: '品种必须是 orange/black/white/brown/gray/tabby/siamese 之一' },
-  )
+  @IsIn(['orange', 'black', 'white', 'brown', 'gray', 'tabby', 'siamese'], {
+    message: '品种必须是 orange/black/white/brown/gray/tabby/siamese 之一',
+  })
   breed: string;
 }

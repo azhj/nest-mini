@@ -2,75 +2,65 @@
  * ============================================================
  * 数据库种子文件（Seed）
  * ============================================================
- *
- * 什么是 Seed（种子数据）？
- * Seed 是数据库迁移/创建后自动填充的"初始测试数据"。
- * 作用：
- *   - 开发时快速有数据可测试
- *   - 确保每个开发环境的初始数据一致
- *   - CI/CD 自动化部署时填充数据
- *
- * Prisma Seed 工作流程：
- *   1. 迁移数据库（prisma migrate dev）
- *   2. 生成 PrismaClient（prisma generate）
- *   3. 运行种子（npm run prisma:seed）
- *   4. 数据进入数据库！
  */
 
 import { PrismaClient } from '@prisma/client';
 
-// 初始化 PrismaClient 实例
 const prisma = new PrismaClient();
 
+const students = [
+  { name: '张伟', age: 15, gender: '男', grade: '高一', className: '1班', phone: '13800001001', address: '北京市朝阳区建国路1号' },
+  { name: '李娜', age: 14, gender: '女', grade: '高一', className: '2班', phone: '13800001002', address: '上海市浦东新区世纪大道200号' },
+  { name: '王浩', age: 16, gender: '男', grade: '高二', className: '1班', phone: '13800001003', address: '广州市天河区珠江新城50号' },
+  { name: '刘洋', age: 15, gender: '女', grade: '高一', className: '3班', phone: '13800001004', address: '深圳市南山区科技园南区8栋' },
+  { name: '陈静', age: 17, gender: '女', grade: '高二', className: '2班', phone: '13800001005', address: '杭州市西湖区文二路100号' },
+  { name: '杨帆', age: 16, gender: '男', grade: '高二', className: '3班', phone: '13800001006', address: '成都市高新区天府大道300号' },
+  { name: '赵磊', age: 15, gender: '男', grade: '高一', className: '1班', phone: '13800001007', address: '武汉市洪山区珞喻路88号' },
+  { name: '孙颖', age: 14, gender: '女', grade: '高一', className: '4班', phone: '13800001008', address: '南京市鼓楼区中山路120号' },
+  { name: '周强', age: 17, gender: '男', grade: '高三', className: '1班', phone: '13800001009', address: '西安市雁塔区科技路66号' },
+  { name: '吴晓', age: 16, gender: '女', grade: '高二', className: '1班', phone: '13800001010', address: '重庆市渝北区新南路200号' },
+  { name: '郑鑫', age: 15, gender: '男', grade: '高一', className: '2班', phone: '13800001011', address: '天津市南开区卫津路30号' },
+  { name: '王芳', age: 17, gender: '女', grade: '高三', className: '2班', phone: '13800001012', address: '苏州市姑苏区干将路666号' },
+  { name: '刘洋', age: 16, gender: '男', grade: '高二', className: '4班', phone: '13800001013', address: '长沙市岳麓区麓山路88号' },
+  { name: '陈晨', age: 15, gender: '女', grade: '高一', className: '5班', phone: '13800001014', address: '郑州市金水区花园路100号' },
+  { name: '黄坤', age: 17, gender: '男', grade: '高三', className: '3班', phone: '13800001015', address: '济南市历下区泉城路50号' },
+  { name: '林敏', age: 16, gender: '女', grade: '高二', className: '2班', phone: '13800001016', address: '青岛市市南区香港中路120号' },
+  { name: '徐鹏', age: 15, gender: '男', grade: '高一', className: '1班', phone: '13800001017', address: '厦门市思明区环岛路180号' },
+  { name: '马丽', age: 17, gender: '女', grade: '高三', className: '1班', phone: '13800001018', address: '大连市中山区人民路30号' },
+  { name: '朱强', age: 16, gender: '男', grade: '高二', className: '5班', phone: '13800001019', address: '沈阳市和平区三好街66号' },
+  { name: '胡雪', age: 15, gender: '女', grade: '高一', className: '3班', phone: '13800001020', address: '哈尔滨市南岗区红军街88号' },
+];
+
 async function main() {
-  console.log('🌱 开始填充种子数据...');
+  console.log('开始填充种子数据...');
 
-  // ========================================
-  // 清空旧数据（可选，确保每次 seed 都是干净状态）
-  // ========================================
-  await prisma.cat.deleteMany(); // DELETE FROM cats
-  console.log('🗑️  已清空 cats 表');
+  await prisma.cat.deleteMany();
+  await prisma.student.deleteMany();
 
-  // ========================================
-  // 插入种子数据
-  // ========================================
-  const tom = await prisma.cat.create({
-    data: {
-      name: 'Tom',
-      age: 3,
-      breed: 'orange',
-    },
-  });
-  console.log(`✅ 创建猫咪: ${tom.name} (ID: ${tom.id})`);
+  const catNames = [
+    { name: 'Tom', age: 3, breed: 'orange' },
+    { name: 'Luna', age: 2, breed: 'black' },
+    { name: 'Mittens', age: 4, breed: 'white' },
+  ];
+  for (const cat of catNames) {
+    const created = await prisma.cat.create({ data: cat });
+    console.log(`创建猫咪: ${created.name} (ID: ${created.id})`);
+  }
 
-  const luna = await prisma.cat.create({
-    data: {
-      name: 'Luna',
-      age: 2,
-      breed: 'black',
-    },
-  });
-  console.log(`✅ 创建猫咪: ${luna.name} (ID: ${luna.id})`);
+  for (const s of students) {
+    const created = await prisma.student.create({ data: s });
+    console.log(`创建学生: ${created.name} (ID: ${created.id})`);
+  }
 
-  const mittens = await prisma.cat.create({
-    data: {
-      name: 'Mittens',
-      age: 4,
-      breed: 'white',
-    },
-  });
-  console.log(`✅ 创建猫咪: ${mittens.name} (ID: ${mittens.id})`);
-
-  console.log('🎉 种子数据填充完成！');
+  console.log(`共创建 ${students.length} 名学生`);
+  console.log('种子数据填充完成');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ 种子数据填充失败:', e);
-    process.exit(1); // 进程退出码 1 表示异常退出
+    console.error('种子数据填充失败:', e);
+    process.exit(1);
   })
   .finally(async () => {
-    // 关闭数据库连接
     await prisma.$disconnect();
-    console.log('🔌 数据库连接已关闭');
   });

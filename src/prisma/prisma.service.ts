@@ -19,14 +19,17 @@
  */
 
 import {
-  Injectable,          // NestJS 依赖注入装饰器
-  OnModuleInit,         // 模块初始化钩子
-  OnModuleDestroy,      // 模块销毁钩子
+  Injectable, // NestJS 依赖注入装饰器
+  OnModuleInit, // 模块初始化钩子
+  OnModuleDestroy, // 模块销毁钩子
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   /**
    * onModuleInit：模块初始化时调用
    * 作用：确保 PrismaClient 在模块启动时就连接数据库

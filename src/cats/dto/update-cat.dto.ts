@@ -40,9 +40,8 @@ export class UpdateCatDto {
   /** 猫咪品种（可选更新） */
   @IsOptional()
   @IsString()
-  @IsIn(
-    ['orange', 'black', 'white', 'brown', 'gray', 'tabby', 'siamese'],
-    { message: '品种必须是 orange/black/white/brown/gray/tabby/siamese 之一' },
-  )
+  @IsIn(['orange', 'black', 'white', 'brown', 'gray', 'tabby', 'siamese'], {
+    message: '品种必须是 orange/black/white/brown/gray/tabby/siamese 之一',
+  })
   breed?: string;
 }

@@ -108,3 +108,16 @@ model Cat {
   // @relation    → 关联关系（一对多、多对多等）
   // @updatedAt   → 自动更新为当前时间
 }
+
+model Student {
+  id         String   @id @default(cuid())
+  name       String
+  age        Int
+  gender     String   // 男 / 女
+  grade      String   // 年级，如 "高一"
+  className  String   // 班级，如 "1班"
+  phone      String
+  address    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
