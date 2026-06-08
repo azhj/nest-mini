@@ -20,7 +20,7 @@ import type { PaginatedResult } from './students.service';
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
-  @Post('list')
+  @Post('page')
   @HttpCode(HttpStatus.OK)
   async findPage(@Body() query: QueryStudentDto): Promise<PaginatedResult<Student>> {
     return await this.studentsService.findPage(query);
