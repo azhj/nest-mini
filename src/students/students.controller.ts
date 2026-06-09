@@ -3,7 +3,6 @@ import {
   Get,
   Post,
   Put,
-  Delete,
   Body,
   Param,
   HttpCode,
@@ -51,7 +50,7 @@ export class StudentsController {
     return ApiResponse.success(result, '修改成功');
   }
 
-  @Delete(':id')
+  @Post('delete/:id')
   @HttpCode(HttpStatus.OK)
   async remove(@Param('id') id: number): Promise<ApiResponse> {
     await this.studentsService.remove(id);
