@@ -36,7 +36,7 @@ export class CatsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ApiResponse<Cat>> {
+  async findOne(@Param('id') id: number): Promise<ApiResponse<Cat>> {
     const result = await this.catsService.findOne(id);
     return ApiResponse.success(result, '查询成功');
   }
@@ -50,7 +50,7 @@ export class CatsController {
 
   @Put(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() updateCatDto: UpdateCatDto,
   ): Promise<ApiResponse<Cat>> {
     const result = await this.catsService.update(id, updateCatDto);
@@ -59,7 +59,7 @@ export class CatsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string): Promise<ApiResponse> {
+  async remove(@Param('id') id: number): Promise<ApiResponse> {
     await this.catsService.remove(id);
     return ApiResponse.success(null, '删除成功');
   }

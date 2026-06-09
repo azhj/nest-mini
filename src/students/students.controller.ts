@@ -30,7 +30,7 @@ export class StudentsController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<ApiResponse<Student>> {
+  async findOne(@Param('id') id: number): Promise<ApiResponse<Student>> {
     const result = await this.studentsService.findOne(id);
     return ApiResponse.success(result, '查询成功');
   }
@@ -44,7 +44,7 @@ export class StudentsController {
 
   @Put(':id')
   async update(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() dto: UpdateStudentDto,
   ): Promise<ApiResponse<Student>> {
     const result = await this.studentsService.update(id, dto);
@@ -53,7 +53,7 @@ export class StudentsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Param('id') id: string): Promise<ApiResponse> {
+  async remove(@Param('id') id: number): Promise<ApiResponse> {
     await this.studentsService.remove(id);
     return ApiResponse.success(null, '删除成功');
   }

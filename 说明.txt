@@ -7,3 +7,8 @@ cd E:\wwwroot\nest-mini
 
 运行dist包
 node dist/src/main.js
+
+
+运行 npx prisma migrate dev 重新生成迁移并更新数据库结构。
+
+重新执行 npx prisma db seed 写入新格式的种子数据

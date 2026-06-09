@@ -50,7 +50,7 @@ export class StudentsService {
     };
   }
 
-  async findOne(id: string): Promise<Student> {
+  async findOne(id: number): Promise<Student> {
     const student = await this.prisma.student.findUnique({ where: { id } });
     if (!student) {
       throw new NotFoundException(`ID 为 ${id} 的学生不存在`);
@@ -64,7 +64,7 @@ export class StudentsService {
     });
   }
 
-  async update(id: string, dto: UpdateStudentDto): Promise<Student> {
+  async update(id: number, dto: UpdateStudentDto): Promise<Student> {
     await this.findOne(id);
     return await this.prisma.student.update({
       where: { id },
@@ -72,7 +72,7 @@ export class StudentsService {
     });
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     await this.findOne(id);
     await this.prisma.student.delete({ where: { id } });
   }

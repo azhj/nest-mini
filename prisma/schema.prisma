@@ -65,8 +65,8 @@ generator client {
  * - 字段用 camelCase：createdAt（不是 created_at）
  */
 model Cat {
-  /** 主键：唯一标识每条记录 */
-  id        String   @id @default(cuid())   // cuid() 生成唯一 ID（类似 "clx9k5g2b0000qzqng5d5e9kf"）
+  /** 主键：自增整数 */
+  id        Int   @id @default(autoincrement())
 
   /** 猫咪名字 */
   name      String
@@ -110,7 +110,7 @@ model Cat {
 }
 
 model Student {
-  id         String   @id @default(cuid())
+  id         Int   @id @default(autoincrement())
   name       String
   age        Int
   gender     String   // 男 / 女

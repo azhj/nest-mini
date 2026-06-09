@@ -66,8 +66,7 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, documentFactory);
 
-  // 获取端口，默认 3000
-  const port = process.env.PORT ?? 3008;
+  const port = process.env.PORT ?? 3011;
 
   // 启动服务器
   await app.listen(port);

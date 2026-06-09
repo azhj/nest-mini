@@ -93,7 +93,7 @@ export class CatsService {
    * @returns 猫咪对象
    * @throws NotFoundException 如果找不到
    */
-  async findOne(id: string): Promise<Cat> {
+  async findOne(id: number): Promise<Cat> {
     const cat = await this.prisma.cat.findUnique({
       where: { id },
     });
@@ -117,7 +117,7 @@ export class CatsService {
    * @returns 更新后的猫咪对象
    * @throws NotFoundException 如果找不到对应 ID
    */
-  async update(id: string, updateCatDto: UpdateCatDto): Promise<Cat> {
+  async update(id: number, updateCatDto: UpdateCatDto): Promise<Cat> {
     // 先检查是否存在，不存在则抛异常
     await this.findOne(id);
 
@@ -141,7 +141,7 @@ export class CatsService {
    * @param id 猫咪 ID
    * @throws NotFoundException 如果找不到
    */
-  async remove(id: string): Promise<void> {
+  async remove(id: number): Promise<void> {
     // 先检查是否存在
     await this.findOne(id);
     // 再删除（或者反过来也行，delete 找不到会抛异常 P2025）
