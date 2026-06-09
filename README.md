@@ -12,7 +12,8 @@
 4. [学习路线图](#学习路线图)
 5. [快速开始](#快速开始)
 6. [Cats 模块详解（第一个功能）](#cats-模块详解第一个功能)
-7. [常用命令](#常用命令)
+7. [第三阶段：进阶功能详解](#第三阶段进阶功能详解jwt-认证守卫-管道-拦截器-异常过滤器)
+8. [常用命令](#常用命令)
 
 ---
 
@@ -175,14 +176,14 @@ NestJS 基于 Angular 的装饰器设计，常用装饰器：
 - [x] CatsService 对接 Prisma（CRUD）
 - [x] 数据库种子数据（Seed）
 
-### 第三阶段：进阶
+### 第三阶段：进阶（已完成）
 
-- [ ] 认证与授权（JWT、Passport）
-- [ ] 守卫（Guards）- 权限控制
-- [ ] 管道（Pipes）- 数据验证和转换
-- [ ] 拦截器（Interceptors）- 响应包装
-- [ ] 异常过滤器（Exception Filters）- 统一错误处理
-- [ ] Swagger / OpenAPI 文档
+- [x] 认证与授权（JWT、Passport）
+- [x] 守卫（Guards）- 权限控制
+- [x] 管道（Pipes）- 数据验证和转换
+- [x] 拦截器（Interceptors）- 响应包装
+- [x] 异常过滤器（Exception Filters）- 统一错误处理
+- [x] Swagger / OpenAPI 文档
 
 ### 第四阶段：高级
 
@@ -339,6 +340,334 @@ export class CatsService {
 ```
 
 **核心变化**：内存数组 → `this.prisma.cat`，同步方法 → `async/await`
+
+---
+
+## 第三阶段：进阶功能详解（JWT 认证、守卫、管道、拦截器、异常过滤器）
+
+### 架构概览
+
+```
+HTTP 请求
+    ↓
+[异常过滤器] → 全局捕获异常，统一 { code, message, data } 格式
+    ↓
+[守卫]       → JwtAuthGuard 验证 Token → RolesGuard 检查角色
+    ↓
+[管道]       → ValidationPipe 验证 DTO → ParseIntPipe 转换参数
+    ↓
+[拦截器]     → HttpInterceptor 记录请求日志
+    ↓
+[Controller] → 处理路由，调用 Service
+    ↓
+[Service]    → 业务逻辑
+    ↓
+[Prisma]     → 数据库操作
+```
+
+---
+
+### 1. 认证与授权（JWT + Passport）
+
+#### 核心概念
+
+| 概念 | 说明 |
+|------|------|
+| **JWT** | JSON Web Token，无状态的 Token 认证 |
+| **Passport** | Node.js 认证中间件，封装了所有主流认证策略 |
+| **Bearer Token** | 请求头 `Authorization: Bearer <token>` |
+
+#### JWT 认证流程
+
+```
+客户端登录:
+POST /auth/login { username, password }
+    ↓
+LocalStrategy 验证用户名 + 密码（bcrypt 比对）
+    ↓
+验证通过 → AuthService.login() 签发 JWT
+    ↓
+返回 { accessToken, tokenType, expiresIn, user }
+
+后续请求:
+GET /api/cats (带 Authorization: Bearer <token>)
+    ↓
+JwtStrategy 从 Token 解析 payload（sub=用户ID, username, role）
+    ↓
+request.user = { id, username, role }
+    ↓
+守卫 / 控制器中使用 request.user
+```
+
+#### 依赖说明
+
+```bash
+npm install @nestjs/jwt @nestjs/passport passport-jwt passport-local
+npm install -D @types/passport-jwt @types/passport-local
+npm install bcrypt && npm install -D @types/bcrypt
+```
+
+#### 关键文件说明
+
+| 文件 | 职责 |
+|------|------|
+| `src/auth/auth.service.ts` | JWT 签发（login） |
+| `src/auth/auth.controller.ts` | 登录接口（/auth/login）、个人信息接口（/auth/profile） |
+| `src/auth/jwt.strategy.ts` | JWT 验证策略（从 Token 解析用户） |
+| `src/auth/local.strategy.ts` | 本地验证策略（用户名+密码验证） |
+| `src/auth/jwt-auth.guard.ts` | JWT 守卫（验证 Token） |
+| `src/auth/local-auth.guard.ts` | 本地认证守卫（验证用户名密码） |
+| `src/auth/roles.guard.ts` | 角色守卫（检查用户角色） |
+| `src/auth/roles.decorator.ts` | `@Roles()` 装饰器（标记接口所需角色） |
+| `src/users/users.service.ts` | 用户 CRUD + 密码加密（bcrypt） |
+| `src/users/users.controller.ts` | 用户管理接口（需管理员权限） |
+
+#### 登录接口
+
+```typescript
+// POST /auth/login
+// Body: { "username": "admin", "password": "123456" }
+@Post('login')
+@UseGuards(LocalAuthGuard) // ← 触发 LocalStrategy 验证
+async login(@Body() loginDto: LoginDto, @Request() req) {
+  return this.authService.login(req.user);
+}
+// 响应: { code: 200, message: "登录成功", data: { accessToken, user, ... } }
+```
+
+#### 受保护接口示例
+
+```typescript
+// GET /auth/profile
+@Get('profile')
+@UseGuards(JwtAuthGuard) // ← 需要携带有效 JWT
+async getProfile(@Request() req) {
+  return ApiResponse.success(req.user, '查询成功');
+}
+```
+
+---
+
+### 2. 守卫（Guards）
+
+守卫是 `@Injectable()` 类，实现 `CanActivate` 接口，决定请求是否能继续。
+
+#### JwtAuthGuard（JWT 验证守卫）
+
+```typescript
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+// 继承 Passport 的 AuthGuard
+// 自动从 Header 提取 Bearer Token 并调用 JwtStrategy.validate()
+```
+
+#### RolesGuard（角色权限守卫）
+
+```typescript
+@Injectable()
+export class RolesGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    // 1. 从 @Roles() 装饰器读取所需角色
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    // 2. 从 request.user 读取当前用户角色
+    const user = context.switchToHttp().getRequest().user;
+
+    // 3. 检查权限
+    if (!requiredRoles.includes(user.role)) {
+      throw new ForbiddenException('权限不足，需要管理员权限');
+    }
+    return true;
+  }
+}
+```
+
+#### 使用守卫
+
+```typescript
+@Controller('cats')
+@UseGuards(JwtAuthGuard, RolesGuard) // 先验证登录，再检查角色
+@Roles('admin') // 只有 admin 可以访问
+export class CatsController {}
+
+// 链式守卫
+@Get(':id')
+@UseGuards(JwtAuthGuard) // 仅需登录
+async findOne(@Param('id') id: string) {}
+```
+
+---
+
+### 3. 管道（Pipes）
+
+管道是 `@Injectable()` 类，实现 `PipeTransform` 接口，用于**转换**或**验证**数据。
+
+#### 内置管道
+
+| 管道 | 作用 | 示例 |
+|------|------|------|
+| `ValidationPipe` | DTO 验证（已在 main.ts 全局配置） | 自动验证 `@IsString()` 等 |
+| `ParseIntPipe` | 字符串 → 整数 | `@Param('id', ParseIntPipe)` |
+| `ParseBoolPipe` | 字符串 → 布尔值 | `@Query('active', ParseBoolPipe)` |
+| `DefaultValuePipe` | 提供默认值 | `@Query('page', new DefaultValuePipe(1))` |
+
+#### 自定义管道示例
+
+```typescript
+// 正整数管道：参数必须是正整数
+@Injectable()
+export class PositiveIntPipe implements PipeTransform<string, number> {
+  transform(value: string, metadata: ArgumentMetadata): number {
+    const val = parseInt(value, 10);
+    if (isNaN(val) || val <= 0) {
+      throw new BadRequestException(`参数 "${metadata.data}" 必须是正整数`);
+    }
+    return val;
+  }
+}
+
+// 使用
+@Get(':id')
+findOne(@Param('id', new PositiveIntPipe()) id: number) {}
+```
+
+---
+
+### 4. 拦截器（Interceptors）
+
+拦截器实现 `NestInterceptor` 接口，使用**洋葱模型**包裹请求处理。
+
+#### 洋葱模型
+
+```
+请求 → Guard → Pipe → INTERCEPTOR(请求前) → Controller → Service
+                                              ↑
+              ← INTERCEPTOR(响应后) ←────────┘
+```
+
+#### 使用示例
+
+```typescript
+@Injectable()
+export class HttpInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const { method, url } = context.switchToHttp().getRequest();
+    const now = Date.now();
+
+    return next.handle().pipe(
+      tap(() => {
+        console.log(`[${method}] ${url} - ${Date.now() - now}ms`);
+      }),
+    );
+  }
+}
+
+// 全局注册（在 main.ts）
+app.useGlobalInterceptors(new HttpInterceptor());
+```
+
+---
+
+### 5. 异常过滤器（Exception Filters）
+
+异常过滤器捕获处理过程中的所有异常，返回统一格式的错误响应。
+
+#### 为什么需要？
+
+1. NestJS 默认异常格式不统一
+2. 前端需要一个统一的错误响应格式
+3. 可以记录日志、过滤敏感信息
+
+#### 统一错误响应格式
+
+```json
+{
+  "code": 400,
+  "message": "用户名不能为空",
+  "data": null,
+  "timestamp": "2024-01-01T00:00:00.000Z"
+}
+```
+
+#### 核心代码
+
+```typescript
+@Catch() // 捕获所有异常
+export class AllExceptionsFilter implements ExceptionFilter {
+  catch(exception: unknown, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+
+    if (exception instanceof HttpException) {
+      // HttpException：400/401/403/404/500 等
+      const status = exception.getStatus();
+      const message = exception.getResponse();
+      response.status(status).json({ code: status, message, data: null });
+    } else {
+      // 未知异常
+      response.status(500).json({
+        code: 500,
+        message: '服务器内部错误，请稍后重试',
+        data: null,
+      });
+    }
+  }
+}
+```
+
+---
+
+### 6. 认证相关 API
+
+#### 认证接口
+
+| 方法 | 路径 | 说明 | 需要认证 |
+|------|------|------|---------|
+| POST | `/auth/login` | 用户登录 | 否 |
+| GET | `/auth/profile` | 获取当前用户信息 | 是（JWT） |
+
+#### 用户接口
+
+| 方法 | 路径 | 说明 | 需要认证 |
+|------|------|------|---------|
+| POST | `/users` | 注册用户 | 否 |
+| GET | `/users` | 获取所有用户 | 是（admin） |
+| GET | `/users/:id` | 获取单个用户 | 是（admin） |
+| PUT | `/users/:id` | 更新用户 | 是（admin） |
+| DELETE | `/users/:id` | 删除用户 | 是（admin） |
+
+#### 默认账户
+
+| 用户名 | 密码 | 角色 |
+|--------|------|------|
+| `admin` | `123456` | admin（管理员） |
+| `user1` | `123456` | user（普通用户） |
+
+---
+
+### 7. JWT 配置
+
+在 `.env` 中配置：
+
+```env
+JWT_SECRET=nest-mini-jwt-secret-key-2024-production
+```
+
+> 生产环境务必使用强密钥（至少 32 字符），建议 64 字符，并定期更换。
+
+---
+
+### 8. Swagger 认证配置
+
+1. 启动服务：`npm run start:dev`
+2. 访问：`http://localhost:3011/api`
+3. 点击右上角 **Authorize** 按钮
+4. 在输入框中粘贴 JWT Token（不包含 "Bearer " 前缀）
+5. 点击 **Authorize** 确认
+6. 之后所有接口请求会自动携带认证头
 
 ---
 
@@ -505,21 +834,5 @@ npm run format           # Prettier 格式化
 # 构建
 npm run build            # TypeScript 编译到 dist/
 ```
-
----
-
-## 下一步
-
-数据库集成已完成！现在你可以：
-
-1. **配置 MySQL**：确保本地 MySQL 已启动，创建 `nest_mini` 数据库
-2. **修改 `.env`**：填入真实密码后运行 `npm run start:dev`
-3. **打开 Prisma Studio**：`npx prisma studio`，在浏览器中可视化查看和编辑数据
-4. **尝试 CRUD**：用 Postman 测试增删改查接口
-5. **下一步学习**：JWT 认证、守卫、管道、拦截器、异常过滤器等
-
-> **Prisma 7 升级提示**：当前项目使用 Prisma v6（稳定版）。Prisma v7 已发布，改用 `prisma.config.ts` 配置数据源。如需升级请参考 [官方迁移指南](https://pris.ly/d/major-version-upgrade)
-
----
 
 > 学习愉快！如果遇到问题，查看 [NestJS 官方文档](https://docs.nestjs.com)

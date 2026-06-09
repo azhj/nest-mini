@@ -2,9 +2,15 @@
  * ============================================================
  * 数据库种子文件（Seed）
  * ============================================================
+ *
+ * 包含：
+ * - 3 只初始猫咪
+ * - 20 名学生
+ * - 1 个管理员账户（admin / 123456）
  */
 
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
@@ -21,7 +27,7 @@ const students = [
   { name: '吴晓', age: 16, gender: '女', grade: '高二', className: '1班', phone: '13800001010', address: '重庆市渝北区新南路200号' },
   { name: '郑鑫', age: 15, gender: '男', grade: '高一', className: '2班', phone: '13800001011', address: '天津市南开区卫津路30号' },
   { name: '王芳', age: 17, gender: '女', grade: '高三', className: '2班', phone: '13800001012', address: '苏州市姑苏区干将路666号' },
-  { name: '刘洋', age: 16, gender: '男', grade: '高二', className: '4班', phone: '13800001013', address: '长沙市岳麓区麓山路88号' },
+  { name: '刘海', age: 16, gender: '男', grade: '高二', className: '4班', phone: '13800001013', address: '长沙市岳麓区麓山路88号' },
   { name: '陈晨', age: 15, gender: '女', grade: '高一', className: '5班', phone: '13800001014', address: '郑州市金水区花园路100号' },
   { name: '黄坤', age: 17, gender: '男', grade: '高三', className: '3班', phone: '13800001015', address: '济南市历下区泉城路50号' },
   { name: '林敏', age: 16, gender: '女', grade: '高二', className: '2班', phone: '13800001016', address: '青岛市市南区香港中路120号' },
@@ -34,9 +40,33 @@ const students = [
 async function main() {
   console.log('开始填充种子数据...');
 
+  // 清空所有表（按依赖顺序）
+  await prisma.user.deleteMany();
   await prisma.cat.deleteMany();
   await prisma.student.deleteMany();
 
+  // 1. 创建管理员账户
+  const hashedPassword = await bcrypt.hash('123456', 10);
+  const admin = await prisma.user.create({
+    data: {
+      username: 'admin',
+      password: hashedPassword,
+      role: 'admin',
+    },
+  });
+  console.log(`创建管理员: ${admin.username} (ID: ${admin.id}, 密码: 123456)`);
+
+  // 2. 创建普通用户
+  const user = await prisma.user.create({
+    data: {
+      username: 'user1',
+      password: hashedPassword,
+      role: 'user',
+    },
+  });
+  console.log(`创建普通用户: ${user.username} (ID: ${user.id}, 密码: 123456)`);
+
+  // 3. 创建猫咪
   const catNames = [
     { name: 'Tom', age: 3, breed: 'orange' },
     { name: 'Luna', age: 2, breed: 'black' },
@@ -47,13 +77,15 @@ async function main() {
     console.log(`创建猫咪: ${created.name} (ID: ${created.id})`);
   }
 
+  // 4. 创建学生
   for (const s of students) {
     const created = await prisma.student.create({ data: s });
     console.log(`创建学生: ${created.name} (ID: ${created.id})`);
   }
 
-  console.log(`共创建 ${students.length} 名学生`);
-  console.log('种子数据填充完成');
+  console.log(`\n种子数据填充完成！`);
+  console.log(`- 管理员账户: admin / 123456`);
+  console.log(`- 普通用户: user1 / 123456`);
 }
 
 main()

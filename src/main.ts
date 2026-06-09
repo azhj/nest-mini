@@ -6,27 +6,22 @@
  * 职责：创建并启动 NestJS 应用实例
  *
  * 启动流程：
- *   bootstrap() → NestFactory.create(AppModule) → app.listen() → 监听 3000 端口
+ *   bootstrap() → NestFactory.create(AppModule)
+ *     → 全局管道/拦截器/异常过滤器 → app.listen() → 监听端口
  */
 
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { AllExceptionsFilter } from './common/all-exceptions.filter';
+import { HttpInterceptor } from './common/http.interceptor';
 
 async function bootstrap() {
-  // 创建 Nest 应用实例
-  // NestFactory.create() 读取 AppModule，扫描所有 @Module 装饰的类
   const app = await NestFactory.create(AppModule);
 
   /**
    * 全局管道：ValidationPipe
-   *
-   * 什么是管道（Pipe）？
-   * 管道是 @Injectable() 的类，负责"转换"输入数据或"验证"输入数据。
-   * 管道有两个类型：
-   *   - 转换管道：将原始输入转换为期望格式（如字符串转数字）
-   *   - 验证管道：验证输入是否符合规则，不符合则抛异常
    *
    * ValidationPipe 的作用：
    * 1. 自动启用 DTO 中的 class-validator 装饰器验证
@@ -39,14 +34,39 @@ async function bootstrap() {
    */
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // 自动剥离 DTO 中未声明的字段（安全防护）
-      forbidNonWhitelisted: true, // 发现多余字段直接报错
-      transform: true, // 自动类型转换（如 ?age=3 字符串 → 数字 3）
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
 
   /**
+   * 全局异常过滤器：AllExceptionsFilter
+   *
+   * AllExceptionsFilter 的作用：
+   * 1. 捕获所有未被处理的异常（HttpException + 未知异常）
+   * 2. 统一返回格式 { code, message, data, timestamp }
+   * 3. 记录错误日志，便于排查
+   *
+   * 注意：
+   * - 异常过滤器先于拦截器执行（异常被捕获后不会触发拦截器的 next())
+   * - ValidationPipe 抛出的验证错误也会被捕获并统一格式
+   */
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  /**
+   * 全局响应拦截器：HttpInterceptor
+   *
+   * HttpInterceptor 的作用：
+   * 1. 记录每个请求的开始和结束
+   * 2. 打印请求方法、路径、耗时
+   * 3. 便于调试和监控
+   */
+  app.useGlobalInterceptors(new HttpInterceptor());
+
+  /**
    * 启用 CORS
+   *
    * 允许前端应用（如 Vue、React）跨域访问 API
    * 生产环境建议配置具体的域名白名单，而不是 true
    */
@@ -54,7 +74,7 @@ async function bootstrap() {
 
   /**
    * Swagger API 文档
-   * 启动后访问 http://localhost:3008/api 查看接口文档
+   * 启动后访问 http://localhost:3011/api 查看接口文档
    */
   const swaggerConfig = new DocumentBuilder()
     .setTitle('NestJS Mini API')
@@ -62,20 +82,22 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('cats', '猫咪接口')
     .addTag('students', '学生接口')
+    .addTag('users', '用户接口')
+    .addTag('auth', '认证接口')
+    .addBearerAuth() // 添加 JWT Bearer 认证按钮
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, documentFactory);
 
   const port = process.env.PORT ?? 3011;
 
-  // 启动服务器
   await app.listen(port);
 
-  // 启动成功后打印提示
   console.log(`✅ NestJS 应用已启动！`);
   console.log(`📍 访问地址：http://localhost:${port}`);
   console.log(`📖 Swagger 文档：http://localhost:${port}/api`);
   console.log(`🐱 猫咪 API：http://localhost:${port}/cats`);
+  console.log(`🔐 认证 API：http://localhost:${port}/auth`);
 }
 
 bootstrap();

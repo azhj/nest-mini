@@ -121,3 +121,20 @@ model Student {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+/**
+ * User 模型 - 用户表
+ *
+ * 用于 JWT 认证系统的用户管理
+ * - 用户名（唯一）
+ * - 密码（bcrypt 加密存储）
+ * - 角色（admin 管理员 / user 普通用户）
+ */
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique  // 用户名，全局唯一
+  password  String              // 密码（bcrypt 加密存储）
+  role      String   @default("user")  // 角色：admin 管理员 | user 普通用户
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
