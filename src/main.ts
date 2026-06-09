@@ -10,6 +10,7 @@
  */
 
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 
@@ -51,6 +52,20 @@ async function bootstrap() {
    */
   app.enableCors();
 
+  /**
+   * Swagger API 文档
+   * 启动后访问 http://localhost:3008/api 查看接口文档
+   */
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('NestJS Mini API')
+    .setDescription('学生管理系统 API 文档')
+    .setVersion('1.0')
+    .addTag('cats', '猫咪接口')
+    .addTag('students', '学生接口')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, documentFactory);
+
   // 获取端口，默认 3000
   const port = process.env.PORT ?? 3008;
 
@@ -60,6 +75,7 @@ async function bootstrap() {
   // 启动成功后打印提示
   console.log(`✅ NestJS 应用已启动！`);
   console.log(`📍 访问地址：http://localhost:${port}`);
+  console.log(`📖 Swagger 文档：http://localhost:${port}/api`);
   console.log(`🐱 猫咪 API：http://localhost:${port}/cats`);
 }
 
