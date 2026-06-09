@@ -28,6 +28,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, map } from 'rxjs/operators';
+import { Response } from 'express';
 
 /** 将 Date 对象格式化为指定格式字符串 */
 function formatDate(value: any): any {
@@ -70,7 +71,11 @@ export class HttpInterceptor implements NestInterceptor {
           this.logger.warn(`[${method}] ${url} - ${elapsed}ms - 失败`);
         },
       }),
-      map((data) => formatDate(data)),
+      map((data) => {
+        const response = context.switchToHttp().getResponse<Response>();
+        response.status(200);
+        return formatDate(data);
+      }),
     );
   }
 }
