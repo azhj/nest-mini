@@ -6,7 +6,6 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -15,6 +14,7 @@ import { CreateStudentDto, UpdateStudentDto } from './dto/create-student.dto';
 import { QueryStudentDto } from './dto/pagination.dto';
 import type { Student } from '@prisma/client';
 import type { PaginatedResult } from './students.service';
+import { ApiResponse } from '../common/api-response';
 
 @Controller('students')
 export class StudentsController {
@@ -22,32 +22,39 @@ export class StudentsController {
 
   @Post('page')
   @HttpCode(HttpStatus.OK)
-  async findPage(@Body() query: QueryStudentDto): Promise<PaginatedResult<Student>> {
-    return await this.studentsService.findPage(query);
+  async findPage(
+    @Body() query: QueryStudentDto,
+  ): Promise<ApiResponse<PaginatedResult<Student>>> {
+    const result = await this.studentsService.findPage(query);
+    return ApiResponse.success(result, '查询成功');
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<Student> {
-    return await this.studentsService.findOne(id);
+  async findOne(@Param('id') id: string): Promise<ApiResponse<Student>> {
+    const result = await this.studentsService.findOne(id);
+    return ApiResponse.success(result, '查询成功');
   }
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: CreateStudentDto): Promise<Student> {
-    return await this.studentsService.create(dto);
+  @HttpCode(HttpStatus.OK)
+  async create(@Body() dto: CreateStudentDto): Promise<ApiResponse<Student>> {
+    const result = await this.studentsService.create(dto);
+    return ApiResponse.success(result, '新增成功');
   }
 
   @Put(':id')
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateStudentDto,
-  ): Promise<Student> {
-    return await this.studentsService.update(id, dto);
+  ): Promise<ApiResponse<Student>> {
+    const result = await this.studentsService.update(id, dto);
+    return ApiResponse.success(result, '修改成功');
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string): Promise<void> {
-    return await this.studentsService.remove(id);
+  @HttpCode(HttpStatus.OK)
+  async remove(@Param('id') id: string): Promise<ApiResponse> {
+    await this.studentsService.remove(id);
+    return ApiResponse.success(null, '删除成功');
   }
 }
