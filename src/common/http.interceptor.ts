@@ -27,7 +27,26 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, map } from 'rxjs/operators';
+
+/** 将 Date 对象格式化为指定格式字符串 */
+function formatDate(value: any): any {
+  if (value instanceof Date) {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())} ${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(value.getSeconds())}`;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => formatDate(item));
+  }
+  if (value !== null && typeof value === 'object') {
+    const result: any = {};
+    for (const key of Object.keys(value)) {
+      result[key] = formatDate(value[key]);
+    }
+    return result;
+  }
+  return value;
+}
 
 @Injectable()
 export class HttpInterceptor implements NestInterceptor {
@@ -38,25 +57,20 @@ export class HttpInterceptor implements NestInterceptor {
     const { method, url } = request;
     const now = Date.now();
 
-    // 前置逻辑：在 Controller 处理请求之前
-    // 例如：记录请求开始时间、添加请求ID等
     this.logger.log(`[${method}] ${url} - 请求开始`);
 
-    // next.handle() 返回 Observable，必须调用
-    // tap() 执行后置逻辑（在响应返回之前）
     return next.handle().pipe(
       tap({
         next: () => {
-          // 请求成功完成后的逻辑
           const elapsed = Date.now() - now;
           this.logger.log(`[${method}] ${url} - ${elapsed}ms - 成功`);
         },
         error: (error) => {
-          // 请求出错时的逻辑（注意：这里捕获不到，因为异常会被异常过滤器处理）
           const elapsed = Date.now() - now;
           this.logger.warn(`[${method}] ${url} - ${elapsed}ms - 失败`);
         },
       }),
+      map((data) => formatDate(data)),
     );
   }
 }
