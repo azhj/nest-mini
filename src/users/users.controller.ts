@@ -5,20 +5,17 @@
  *
  * 职责：处理用户相关 HTTP 请求
  *
- * 接口设计：
- * GET    /users          - 获取所有用户列表（需管理员权限）
- * GET    /users/:id      - 获取单个用户信息（需管理员权限）
- * POST   /users          - 创建用户（注册）
- * PUT    /users/:id      - 更新用户（需管理员权限）
- * DELETE /users/:id      - 删除用户（需管理员权限）
+ * 接口设计（统一使用 POST 方法）：
+ * POST /users/list         - 获取所有用户列表（需管理员权限）
+ * POST /users/detail/:id   - 获取单个用户信息（需管理员权限）
+ * POST /users              - 创建用户（注册）
+ * POST /users/update/:id   - 更新用户（需管理员权限）
+ * POST /users/delete/:id   - 删除用户（需管理员权限）
  */
 
 import {
   Controller,
-  Get,
   Post,
-  Put,
-  Delete,
   Body,
   Param,
   ParseIntPipe,
@@ -44,7 +41,7 @@ export class UsersController {
     return ApiResponse.success(user, '注册成功');
   }
 
-  @Get()
+  @Post('list')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
@@ -54,7 +51,7 @@ export class UsersController {
     return ApiResponse.success(users, '查询成功');
   }
 
-  @Get(':id')
+  @Post('detail/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
@@ -64,7 +61,7 @@ export class UsersController {
     return ApiResponse.success(user, '查询成功');
   }
 
-  @Put(':id')
+  @Post('update/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
@@ -77,7 +74,7 @@ export class UsersController {
     return ApiResponse.success(user, '更新成功');
   }
 
-  @Delete(':id')
+  @Post('delete/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiBearerAuth()
