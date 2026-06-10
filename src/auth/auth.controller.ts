@@ -17,6 +17,8 @@ import {
   Body,
   UseGuards,
   Request,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -43,6 +45,7 @@ export class AuthController {
    * 3. AuthService.login() 签发 JWT Token
    */
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: '用户登录（签发 JWT）' })
   login(@Body() _loginDto: LoginDto, @Request() req: AuthenticatedRequest) {
