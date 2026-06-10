@@ -13,6 +13,7 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { StudentsService } from './students.service';
@@ -21,6 +22,7 @@ import { QueryStudentDto } from './dto/pagination.dto';
 import type { Student } from '@prisma/client';
 import type { PaginatedResult } from './students.service';
 import { ApiResponse } from '../common/api-response';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 /**
  * 学生模块 API 文档
@@ -50,6 +52,7 @@ export class StudentsController {
    * 根据 ID 获取单个学生
    */
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '根据 ID 获取单个学生' })
   async findOne(@Param('id') id: number): Promise<ApiResponse<Student>> {
     const result = await this.studentsService.findOne(id);

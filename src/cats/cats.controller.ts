@@ -24,6 +24,7 @@ import { CatsService } from './cats.service';
 import { CreateCatDto, UpdateCatDto } from './dto';
 import type { Cat } from '@prisma/client';
 import { ApiResponse } from '../common/api-response';
+import { Public } from '../auth/roles.decorator';
 
 /**
  * 猫咪模块 API 文档
@@ -38,6 +39,7 @@ export class CatsController {
    * 获取所有猫咪列表
    */
   @Get()
+  @Public()
   @ApiOperation({ summary: '获取所有猫咪列表' })
   async findAll(): Promise<ApiResponse<Cat[]>> {
     const result = await this.catsService.findAll();

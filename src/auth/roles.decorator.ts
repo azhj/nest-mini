@@ -32,6 +32,20 @@ import { SetMetadata } from '@nestjs/common';
 export const ROLES_KEY = 'roles';
 
 /**
+ * 公开接口元数据的 Key
+ * 标记了 @Public() 的路由将跳过 JWT 验证
+ */
+export const IS_PUBLIC_KEY = 'isPublic';
+
+/**
+ * @Public() 装饰器工厂
+ *
+ * 用于标记不需要登录验证的路由（如登录接口）
+ * 全局 JWT 守卫会检查此元数据，跳过验证
+ */
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
+
+/**
  * @Roles() 装饰器工厂
  *
  * @param roles 允许访问的角色数组，如 ['admin'] 或 ['admin', 'user']

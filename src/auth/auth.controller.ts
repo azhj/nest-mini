@@ -26,6 +26,7 @@ import { LoginDto } from '../users/dto/user.dto';
 import { ApiResponse } from '../common/api-response';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Public } from './roles.decorator';
 
 interface AuthenticatedRequest {
   user: { id: number; username: string; role: string };
@@ -47,6 +48,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @UseGuards(LocalAuthGuard)
+  @Public()
   @ApiOperation({ summary: '用户登录（签发 JWT）' })
   login(@Body() _loginDto: LoginDto, @Request() req: AuthenticatedRequest) {
     const result = this.authService.login(req.user);

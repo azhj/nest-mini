@@ -16,10 +16,12 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { LocalStrategy } from './local.strategy';
+import { JwtAuthGuard } from './jwt-auth.guard';
 import { UsersModule } from '../users/users.module';
 
 @Module({
@@ -61,11 +63,16 @@ import { UsersModule } from '../users/users.module';
 
   providers: [
     AuthService,
-    JwtStrategy, // JWT 验证策略（验证 Token）
-    LocalStrategy, // 本地验证策略（验证用户名+密码）
+    JwtStrategy,    // JWT 验证策略（验证 Token）
+    LocalStrategy,   // 本地验证策略（验证用户名+密码）
+    // 注册为全局守卫，所有接口默认需要登录验证
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 
   // 导出 JwtModule，使其他模块也能注入 JwtService
   exports: [AuthService, JwtModule],
 })
-export class AuthModule {}
+export class AuthModule { }
