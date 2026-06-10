@@ -14,11 +14,20 @@ import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { AllExceptionsFilter } from './common/all-exceptions.filter';
-import { HttpInterceptor } from './common/http.interceptor';
+import { AllExceptionsFilter } from './app/common/all-exceptions.filter';
+import { HttpInterceptor } from './app/common/http.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  /**
+   * 注意：暂不使用 setGlobalPrefix，保持手机端和PC端接口路径清晰分离
+   *
+   * - 手机端接口（AppModule）：/auth, /cats, /students, /users, /health
+   * - PC后台接口（AdminModule）：/admin/auth, /admin/cats, /admin/students
+   *
+   * AdminModule 内的 Controller 通过 @Controller('admin/...') 自行添加前缀
+   */
 
   /**
    * 全局管道：ValidationPipe
@@ -81,10 +90,12 @@ async function bootstrap() {
     .setDescription('学生管理系统 API 文档')
     .setVersion('1.0')
     .addTag('health', '健康检查接口')
-    .addTag('auth', '认证接口')
-    .addTag('users', '用户接口')
-    .addTag('cats', '猫咪接口')
-    .addTag('students', '学生接口')
+    .addTag('auth', '认证接口（手机端）')
+    .addTag('users', '用户接口（手机端）')
+    .addTag('cats', '猫咪接口（手机端）')
+    .addTag('students', '学生接口（手机端）')
+    .addTag('admin-cats', '猫咪接口（PC后台）')
+    .addTag('admin-students', '学生接口（PC后台）')
     .addBearerAuth()
     .build();
   const documentFactory = () =>
@@ -98,7 +109,9 @@ async function bootstrap() {
   console.log(`📍 访问地址：http://localhost:${port}`);
   console.log(`📖 Swagger 文档：http://localhost:${port}/api`);
   console.log(`💚 健康检查：http://localhost:${port}/health/info`);
-  console.log(`🔐 认证 API：http://localhost:${port}/auth`);
+  console.log(`🔐 手机端认证 API：http://localhost:${port}/auth`);
+  console.log(`🖥️ PC后台猫咪 API：http://localhost:${port}/admin/cats`);
+  console.log(`🖥️ PC后台学生 API：http://localhost:${port}/admin/students`);
 }
 
 void bootstrap();

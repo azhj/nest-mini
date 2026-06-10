@@ -25,5 +25,8 @@ import { CatsService } from './cats.service';
   // providers：注册该模块的服务（Controller 通过构造函数注入）
   // 注意：PrismaService 不需要在这里注册，因为 PrismaModule 是全局的
   providers: [CatsService],
+
+  // 导出 CatsService，供 AdminModule 等其他模块复用
+  exports: [CatsService],
 })
 export class CatsModule {}

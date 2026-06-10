@@ -12,3 +12,14 @@ node dist/src/main.js
 运行 npx prisma migrate dev 重新生成迁移并更新数据库结构。
 
 重新执行 npx prisma db seed 写入新格式的种子数据
+
+
+# 查找占用 3011 端口的进程
+Get-NetTCPConnection -LocalPort 3011 -State Listen | Select-Object OwningProcess
+
+# 根据进程 ID 杀掉它
+taskkill /PID <进程ID> /F
+
+# 杀掉所有 node 进程
+Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force
+杀掉后再 npx nest start 就正常了。

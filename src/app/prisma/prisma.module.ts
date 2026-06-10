@@ -19,7 +19,7 @@
 import { Module, Global } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
-@Global() // 👈 @Global 装饰器：声明为全局模块，所有模块都能直接注入 PrismaService
+@Global() // @Global 装饰器：声明为全局模块，所有模块都能直接注入 PrismaService
 @Module({
   providers: [PrismaService], // 注册 PrismaService
   exports: [PrismaService], // 导出，供其他模块使用
