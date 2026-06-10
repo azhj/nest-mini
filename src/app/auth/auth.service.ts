@@ -57,4 +57,30 @@ export class AuthService {
   async getProfile(userId: number) {
     return await this.usersService.findOne(userId);
   }
+
+  /**
+   * 刷新 Token（静默续期）
+   *
+   * 支持两种场景：
+   * 1. Token 即将过期（前端主动调用）
+   * 2. Token 已过期但在宽限期内（JwtStrategy 已解析 payload）
+   *
+   * @param user 从 JwtStrategy.validate() 解析出的用户信息
+   * @returns 新签发的 Token
+   */
+  refreshToken(user: { id: number; username: string; role: string }) {
+    const payload: JwtPayload = {
+      sub: user.id,
+      username: user.username,
+      role: user.role,
+    };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      tokenType: 'Bearer',
+      expiresIn: '7d',
+    };
+  }
 }
