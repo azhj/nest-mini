@@ -21,11 +21,11 @@ import { UsersService } from '../users/users.service';
 
 /** JWT Payload 的类型定义 */
 export interface JwtPayload {
-  sub: number;   // 用户 ID
+  sub: number; // 用户 ID
   username: string;
   role: string;
-  iat?: number;   // 签发时间（自动附加）
-  exp?: number;   // 过期时间（自动附加）
+  iat?: number; // 签发时间（自动附加）
+  exp?: number; // 过期时间（自动附加）
 }
 
 @Injectable()

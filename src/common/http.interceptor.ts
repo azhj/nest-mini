@@ -28,10 +28,11 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, map } from 'rxjs/operators';
-import { Response } from 'express';
+
+import { Request } from 'express';
 
 /** 将 Date 对象格式化为指定格式字符串 */
-function formatDate(value: any): any {
+function formatDate(value: unknown): unknown {
   if (value instanceof Date) {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())} ${pad(value.getHours())}:${pad(value.getMinutes())}:${pad(value.getSeconds())}`;
@@ -40,9 +41,9 @@ function formatDate(value: any): any {
     return value.map((item) => formatDate(item));
   }
   if (value !== null && typeof value === 'object') {
-    const result: any = {};
+    const result: Record<string, unknown> = {};
     for (const key of Object.keys(value)) {
-      result[key] = formatDate(value[key]);
+      result[key] = formatDate((value as Record<string, unknown>)[key]);
     }
     return result;
   }
@@ -53,8 +54,12 @@ function formatDate(value: any): any {
 export class HttpInterceptor implements NestInterceptor {
   private readonly logger = new Logger(HttpInterceptor.name);
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const request = context
+      .switchToHttp()
+      .getRequest<
+        Request & { user?: { id: number; username: string; role: string } }
+      >();
     const { method, url } = request;
     const now = Date.now();
 
@@ -66,14 +71,12 @@ export class HttpInterceptor implements NestInterceptor {
           const elapsed = Date.now() - now;
           this.logger.log(`[${method}] ${url} - ${elapsed}ms - 成功`);
         },
-        error: (error) => {
+        error: () => {
           const elapsed = Date.now() - now;
           this.logger.warn(`[${method}] ${url} - ${elapsed}ms - 失败`);
         },
       }),
       map((data) => {
-        const response = context.switchToHttp().getResponse<Response>();
-        response.status(200);
         return formatDate(data);
       }),
     );

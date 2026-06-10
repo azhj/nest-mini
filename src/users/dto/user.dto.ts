@@ -13,7 +13,13 @@
  * - LoginDto：登录（用户名、密码）
  */
 
-import { IsString, MinLength, MaxLength, IsOptional, IsIn } from 'class-validator';
+import {
+  IsString,
+  MinLength,
+  MaxLength,
+  IsOptional,
+  IsIn,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /** 注册 DTO */
@@ -39,7 +45,11 @@ export class UpdateUserDto {
   @MinLength(6)
   password?: string;
 
-  @ApiPropertyOptional({ description: '角色', example: 'admin', enum: ['admin', 'user'] })
+  @ApiPropertyOptional({
+    description: '角色',
+    example: 'admin',
+    enum: ['admin', 'user'],
+  })
   @IsOptional()
   @IsString()
   @IsIn(['admin', 'user'])

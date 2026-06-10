@@ -1,3 +1,9 @@
+/**
+ * ============================================================
+ * 学生服务（StudentsService）- 业务逻辑层
+ * ============================================================
+ */
+
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStudentDto, UpdateStudentDto } from './dto/create-student.dto';
@@ -20,7 +26,12 @@ export class StudentsService {
     const { page = 1, pageSize = 10, name, grade, className } = query;
     const skip = (page - 1) * pageSize;
 
-    const where: any = {};
+    const where: {
+      name?: { contains: string };
+      grade?: string;
+      className?: string;
+    } = {};
+
     if (name) {
       where.name = { contains: name };
     }

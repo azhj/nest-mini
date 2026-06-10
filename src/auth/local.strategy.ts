@@ -50,7 +50,10 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
     }
 
     // 3. 验证密码（bcrypt.compare 内部处理加密比对）
-    const isValid = await this.usersService.validatePassword(password, user.password);
+    const isValid = await this.usersService.validatePassword(
+      password,
+      user.password,
+    );
     if (!isValid) {
       throw new UnauthorizedException('用户名或密码错误');
     }

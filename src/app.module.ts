@@ -7,6 +7,9 @@
  *   AppModule
  *     ├── PrismaModule (全局，所有模块共享)
  *     │     └── PrismaService → 连接 MySQL 数据库
+ *     ├── HealthModule (健康检查)
+ *     │     └── HealthController → /health 路由
+ *     │     └── HealthService → 健康状态检查
  *     ├── AuthModule (认证模块)
  *     │     ├── AuthController → /auth 路由
  *     │     ├── AuthService → JWT 签发
@@ -24,6 +27,7 @@
 
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { CatsModule } from './cats/cats.module';
@@ -33,6 +37,8 @@ import { StudentsModule } from './students/students.module';
   imports: [
     // PrismaModule.forRoot() 为全局注册，导入一次后所有模块都能用 PrismaService
     PrismaModule,
+    // 健康检查模块
+    HealthModule,
     // AuthModule 必须在 UsersModule 之前导入（AuthModule 依赖 UsersModule）
     AuthModule,
     UsersModule,

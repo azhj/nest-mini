@@ -61,8 +61,8 @@ import { UsersModule } from '../users/users.module';
 
   providers: [
     AuthService,
-    JwtStrategy,    // JWT 验证策略（验证 Token）
-    LocalStrategy,   // 本地验证策略（验证用户名+密码）
+    JwtStrategy, // JWT 验证策略（验证 Token）
+    LocalStrategy, // 本地验证策略（验证用户名+密码）
   ],
 
   // 导出 JwtModule，使其他模块也能注入 JwtService

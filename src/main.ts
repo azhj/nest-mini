@@ -60,7 +60,7 @@ async function bootstrap() {
    * HttpInterceptor 的作用：
    * 1. 记录每个请求的开始和结束
    * 2. 打印请求方法、路径、耗时
-   * 3. 便于调试和监控
+   * 3. 统一响应格式（Date 序列化）
    */
   app.useGlobalInterceptors(new HttpInterceptor());
 
@@ -80,24 +80,25 @@ async function bootstrap() {
     .setTitle('NestJS Mini API')
     .setDescription('学生管理系统 API 文档')
     .setVersion('1.0')
+    .addTag('health', '健康检查接口')
+    .addTag('auth', '认证接口')
+    .addTag('users', '用户接口')
     .addTag('cats', '猫咪接口')
     .addTag('students', '学生接口')
-    .addTag('users', '用户接口')
-    .addTag('auth', '认证接口')
-    .addBearerAuth() // 添加 JWT Bearer 认证按钮
+    .addBearerAuth()
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, swaggerConfig);
+  const documentFactory = () =>
+    SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api', app, documentFactory);
 
   const port = process.env.PORT ?? 3011;
 
   await app.listen(port);
-
   console.log(`✅ NestJS 应用已启动！`);
   console.log(`📍 访问地址：http://localhost:${port}`);
   console.log(`📖 Swagger 文档：http://localhost:${port}/api`);
-  console.log(`🐱 猫咪 API：http://localhost:${port}/cats`);
+  console.log(`💚 健康检查：http://localhost:${port}/health/info`);
   console.log(`🔐 认证 API：http://localhost:${port}/auth`);
 }
 
-bootstrap();
+void bootstrap();

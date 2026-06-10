@@ -13,7 +13,11 @@
  * - 登录时对比 bcrypt 加密后的密码（不可逆）
  */
 
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
@@ -31,7 +35,6 @@ export class UsersService {
    * 3. 写入数据库
    */
   async create(dto: CreateUserDto) {
-    // 检查用户名唯一性
     const existing = await this.prisma.user.findUnique({
       where: { username: dto.username },
     });
@@ -39,10 +42,8 @@ export class UsersService {
       throw new ConflictException('用户名已存在');
     }
 
-    // bcrypt 加密密码（同步方法，saltRounds = 10）
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // 写入数据库
     return await this.prisma.user.create({
       data: {
         username: dto.username,
@@ -56,7 +57,6 @@ export class UsersService {
   async findAll() {
     return await this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
-      // 不返回密码字段
       select: {
         id: true,
         username: true,
@@ -89,7 +89,6 @@ export class UsersService {
   async findByUsername(username: string) {
     return await this.prisma.user.findUnique({
       where: { username },
-      // 返回密码用于登录验证
     });
   }
 
@@ -97,7 +96,7 @@ export class UsersService {
   async update(id: number, dto: UpdateUserDto) {
     await this.findOne(id);
 
-    const data: any = {};
+    const data: { password?: string; role?: string } = {};
     if (dto.password) {
       data.password = await bcrypt.hash(dto.password, 10);
     }
@@ -131,7 +130,10 @@ export class UsersService {
    * @param hashedPassword 数据库中的加密密码
    * @returns 密码是否匹配
    */
-  async validatePassword(password: string, hashedPassword: string): Promise<boolean> {
+  async validatePassword(
+    password: string,
+    hashedPassword: string,
+  ): Promise<boolean> {
     return await bcrypt.compare(password, hashedPassword);
   }
 }

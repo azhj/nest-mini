@@ -30,23 +30,19 @@ export class AuthService {
    * 3. 使用 JwtService.sign() 生成 Token
    * 4. 返回 Token 和用户信息
    */
-  async login(user: { id: number; username: string; role: string }) {
-    // 构造 Payload（注意：不要在 payload 中存储敏感信息如密码）
+  login(user: { id: number; username: string; role: string }) {
     const payload: JwtPayload = {
       sub: user.id,
       username: user.username,
       role: user.role,
     };
 
-    // 签发 Token
-    // JWT 组成：Header.Payload.Signature
-    // 签名部分用 secretOrKey 加密，防篡改
     const accessToken = this.jwtService.sign(payload);
 
     return {
-      accessToken,         // JWT Token，客户端保存
-      tokenType: 'Bearer', // Token 类型（固定值）
-      expiresIn: '7d',     // 过期时间（方便客户端显示）
+      accessToken,
+      tokenType: 'Bearer',
+      expiresIn: '7d',
       user: {
         id: user.id,
         username: user.username,
@@ -57,13 +53,6 @@ export class AuthService {
 
   /**
    * 获取当前用户信息（通过 Token）
-   *
-   * 使用场景：
-   * GET /auth/profile
-   * @UseGuards(JwtAuthGuard)
-   * async getProfile(@Request() req) {
-   *   return this.authService.getProfile(req.user);
-   * }
    */
   async getProfile(userId: number) {
     return await this.usersService.findOne(userId);

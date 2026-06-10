@@ -22,26 +22,48 @@ import {
   IsIn,
   IsOptional,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+
+const CAT_BREEDS = [
+  'orange',
+  'black',
+  'white',
+  'brown',
+  'gray',
+  'tabby',
+  'siamese',
+] as const;
 
 export class UpdateCatDto {
-  /** 猫咪名字（可选更新） */
+  @ApiPropertyOptional({ description: '猫咪名字', example: '团子' })
   @IsOptional()
-  @IsString()
+  @IsString({ message: '名字必须是字符串' })
   @MinLength(1, { message: '名字不能为空' })
   name?: string;
 
-  /** 猫咪年龄（可选更新） */
+  @ApiPropertyOptional({
+    description: '猫咪年龄',
+    example: 3,
+    minimum: 1,
+    maximum: 30,
+  })
   @IsOptional()
   @IsInt({ message: '年龄必须是整数' })
   @Min(1, { message: '年龄最小为 1' })
   @Max(30, { message: '年龄最大为 30' })
+  @Type(() => Number) // 确保 Body 中传入的字符串自动转为数字
   age?: number;
 
-  /** 猫咪品种（可选更新） */
+  @ApiPropertyOptional({
+    description: '猫咪品种',
+    example: 'orange',
+    enum: CAT_BREEDS,
+  })
   @IsOptional()
   @IsString()
-  @IsIn(['orange', 'black', 'white', 'brown', 'gray', 'tabby', 'siamese'], {
-    message: '品种必须是 orange/black/white/brown/gray/tabby/siamese 之一',
+  @IsIn(CAT_BREEDS, {
+    message: `品种必须是 ${CAT_BREEDS.join('/')} 之一`,
   })
   breed?: string;
 }

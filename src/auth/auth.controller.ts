@@ -25,6 +25,10 @@ import { ApiResponse } from '../common/api-response';
 import { LocalAuthGuard } from './local-auth.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
+interface AuthenticatedRequest {
+  user: { id: number; username: string; role: string };
+}
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -41,8 +45,8 @@ export class AuthController {
   @Post('login')
   @UseGuards(LocalAuthGuard)
   @ApiOperation({ summary: '用户登录（签发 JWT）' })
-  async login(@Body() loginDto: LoginDto, @Request() req) {
-    const result = await this.authService.login(req.user);
+  login(@Body() _loginDto: LoginDto, @Request() req: AuthenticatedRequest) {
+    const result = this.authService.login(req.user);
     return ApiResponse.success(result, '登录成功');
   }
 
@@ -56,7 +60,7 @@ export class AuthController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '获取当前登录用户信息' })
-  async getProfile(@Request() req) {
+  async getProfile(@Request() req: AuthenticatedRequest) {
     const user = await this.authService.getProfile(req.user.id);
     return ApiResponse.success(user, '查询成功');
   }

@@ -17,33 +17,36 @@
  * export class CatsController {}
  */
 
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 
+interface AuthenticatedRequest {
+  user: { id: number; username: string; role: string };
+}
+
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    // 1. 获取接口要求的角色（从 @Roles() 装饰器）
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
-      context.getHandler(),   // 路由级别
-      context.getClass(),     // Controller 级别
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
-    // 如果没有配置 @Roles()，直接放行
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
-    // 2. 获取当前请求
-    const request = context.switchToHttp().getRequest();
-
-    // 3. 获取当前用户（由 JwtAuthGuard 挂载）
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.user;
 
-    // 4. 检查用户角色是否匹配
     if (!user || !requiredRoles.includes(user.role)) {
       throw new ForbiddenException('权限不足，需要管理员权限');
     }
