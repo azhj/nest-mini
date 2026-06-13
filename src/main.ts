@@ -12,13 +12,20 @@
 
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { AllExceptionsFilter } from './app/common/all-exceptions.filter';
 import { HttpInterceptor } from './app/common/http.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // 启用静态文件服务，访问 http://localhost:port/uploads/filename 可查看上传的文件
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   /**
    * 注意：暂不使用 setGlobalPrefix，保持手机端和PC端接口路径清晰分离
@@ -94,6 +101,7 @@ async function bootstrap() {
     .addTag('users', '用户接口（手机端）')
     .addTag('cats', '猫咪接口（手机端）')
     .addTag('students', '学生接口（手机端）')
+    .addTag('upload', '文件上传接口')
     .addTag('admin-cats', '猫咪接口（PC后台）')
     .addTag('admin-students', '学生接口（PC后台）')
     .addBearerAuth()

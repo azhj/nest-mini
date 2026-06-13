@@ -25,8 +25,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { StudentsService, PaginatedResult } from '../app/students/students.service';
-import { CreateStudentDto, UpdateStudentDto } from '../app/students/dto/create-student.dto';
+import {
+  StudentsService,
+  PaginatedResult,
+} from '../app/students/students.service';
+import {
+  CreateStudentDto,
+  UpdateStudentDto,
+} from '../app/students/dto/create-student.dto';
 import { QueryStudentDto } from '../app/students/dto/pagination.dto';
 import type { Student } from '@prisma/client';
 import { ApiResponse } from '../app/common/api-response';
@@ -62,9 +68,7 @@ export class AdminStudentsController {
   @Post()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '创建学生（PC后台）' })
-  async create(
-    @Body() dto: CreateStudentDto,
-  ): Promise<ApiResponse<Student>> {
+  async create(@Body() dto: CreateStudentDto): Promise<ApiResponse<Student>> {
     const result = await this.studentsService.create(dto);
     return ApiResponse.success(result, '新增成功');
   }

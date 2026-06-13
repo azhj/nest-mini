@@ -118,6 +118,7 @@ model Student {
   className  String   // 班级，如 "1班"
   phone      String
   address    String
+  avatar     String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }

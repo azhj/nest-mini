@@ -35,6 +35,7 @@ import { AuthModule } from './app/auth/auth.module';
 import { UsersModule } from './app/users/users.module';
 import { CatsModule } from './app/cats/cats.module';
 import { StudentsModule } from './app/students/students.module';
+import { UploadModule } from './app/upload/upload.module';
 import { AdminModule } from './admin/admin.module';
 
 @Module({
@@ -48,6 +49,7 @@ import { AdminModule } from './admin/admin.module';
     UsersModule,
     CatsModule,
     StudentsModule,
+    UploadModule,
     // PC后台管理模块（所有接口自动加 /admin 前缀，见 main.ts setGlobalPrefix）
     AdminModule,
   ],

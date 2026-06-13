@@ -105,7 +105,7 @@ export class AuthController {
     try {
       payload = this.jwtService.verify(token, {
         ignoreExpiration: true,
-      }) as JwtPayload;
+      });
     } catch {
       return ApiResponse.error('Token 无效，无法刷新', 401);
     }

@@ -40,6 +40,11 @@ export class CreateStudentDto {
   @ApiProperty({ description: '家庭住址', example: '北京市朝阳区xxx路xx号' })
   @IsString({ message: '住址必须是字符串' })
   address: string;
+
+  @ApiPropertyOptional({ description: '头像URL', example: '/uploads/xxx.png' })
+  @IsOptional()
+  @IsString({ message: '头像必须是字符串' })
+  avatar?: string;
 }
 
 /** 更新学生 DTO（所有字段可选） */
@@ -93,4 +98,9 @@ export class UpdateStudentDto {
   @IsOptional()
   @IsString({ message: '住址必须是字符串' })
   address?: string;
+
+  @ApiPropertyOptional({ description: '头像URL', example: '/uploads/xxx.png' })
+  @IsOptional()
+  @IsString({ message: '头像必须是字符串' })
+  avatar?: string;
 }
